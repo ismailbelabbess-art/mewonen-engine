@@ -8,16 +8,66 @@ TELEGRAM_BOT_TOKEN = os.environ.get("MEWONEN_TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("MEWONEN_TELEGRAM_CHAT_ID", "")
 
 TEMPLATES = [
-    {"h": "checked my bank account", "b": ["I looked at the number. It looked back at me.", "My balance and motivation are both low."], "p": "Money comes and goes. Mostly goes."},
-    {"h": "tried to make friends", "b": ["I smiled. They stared at their phone.", "200 messages. None for me."], "p": "Maybe tomorrow. Or not."},
-    {"h": "read the news", "b": ["Bad news. More bad news. A dog. The dog was fine.", "I scrolled 40 minutes. 47 new worries."], "p": "I closed the app. The world waited."},
-    {"h": "went outside", "b": ["Too hot. Phone overheated. I overheated.", "A bird judged me."], "p": "Back inside. AC is my friend."},
-    {"h": "tried to sleep", "b": ["2am. Mistakes since 2018. Replay.", "3am. Solved hunger. Forgot."], "p": "Alarm at 7. Aged 10 years."},
-    {"h": "used a dating app", "b": ["50 swipes. One match. Selling crypto.", "Hobby: surviving. Unmatched."], "p": "Adopting another plant."},
-    {"h": "called my mom", "b": ["Eating dry cereal. She asked if I eat well.", "Love life? My plant is thriving."], "p": "Moms know everything."},
-    {"h": "went to work", "b": ["3 meetings. 2 could be emails. 1 a text.", "We're family. Families don't fire on Zoom."], "p": "I work to afford work."},
-    {"h": "tried to be healthy", "b": ["Salad costs more than Netflix.", "I ran. Lungs questioned me."], "p": "Temple. Wants pizza."},
-    {"h": "checked social media", "b": ["Everyone is winning. I'm eating toast.", "Posted. 3 likes. Mom. Bot. Accident."], "p": "Toast was cold. Life goes on."}
+    {
+        "h": "checked my bank account",
+        "b": ["The number stared back at me. No emotion. Just... nothing.", "I closed the app. Opened it again. Still nothing."],
+        "p": "Money is just numbers on a screen. But those numbers control my life.",
+        "bg": "city night"
+    },
+    {
+        "h": "tried to talk to someone today",
+        "b": ["I said hello. They looked at their phone. I became invisible.", "200 friends online. Zero in real life."],
+        "p": "We're more connected than ever. And more alone than ever.",
+        "bg": "coffee shop"
+    },
+    {
+        "h": "read the news again",
+        "b": ["Everything is burning. Everything is dying. Here's a funny cat.", "I don't know how to feel anymore. So I scroll."],
+        "p": "The world is heavy. But I keep carrying it.",
+        "bg": "city night"
+    },
+    {
+        "h": "stepped outside",
+        "b": ["The heat hit me like a wall. The sun doesn't care about my plans.", "A bird looked at me. I think it knew I was struggling."],
+        "p": "Nature doesn't judge. It just... is.",
+        "bg": "sunset sky"
+    },
+    {
+        "h": "couldn't sleep again",
+        "b": ["My brain decided to replay every mistake. Every embarrassing moment. Every what-if.", "3am. The world is asleep. I'm here. With my thoughts."],
+        "p": "Tomorrow I'll be tired. But I'll try again.",
+        "bg": "night sky"
+    },
+    {
+        "h": "tried to find love",
+        "b": ["Swipe. Swipe. Swipe. Hope. Disappointment. Repeat.", "Someone asked what I do for fun. I said 'survive.' They unmatched."],
+        "p": "Maybe love isn't an algorithm. Maybe it's just... time.",
+        "bg": "coffee shop"
+    },
+    {
+        "h": "called my mom",
+        "b": ["Her voice. That warmth. She asked if I'm okay. I said yes. I lied.", "She knew. Moms always know."],
+        "p": "No matter how old I get, her voice makes me feel... safe.",
+        "bg": "quiet morning"
+    },
+    {
+        "h": "went to work",
+        "b": ["Sitting. Staring. Typing. Pretending to care.", "My boss said 'great job.' I did nothing. Nothing matters."],
+        "p": "I work to live. But sometimes I forget to live.",
+        "bg": "city night"
+    },
+    {
+        "h": "tried to take care of myself",
+        "b": ["I drank water. I stretched. I breathed.", "It's hard. Being kind to yourself. Harder than it should be."],
+        "p": "But I tried. That counts. Right?",
+        "bg": "quiet morning"
+    },
+    {
+        "h": "checked my phone 47 times today",
+        "b": ["Nothing important. Just habit. Just... emptiness.", "I put it down. Picked it up. Put it down again."],
+        "p": "One day, I'll learn to just... be.",
+        "bg": "empty street"
+    }
 ]
 
 def msg(text):
@@ -34,11 +84,16 @@ def send_vid(path, caption):
 def script():
     t = random.choice(TEMPLATES)
     b = random.choice(t["b"])
-    return f"Mewonen. Somewhere in the world.\n\nToday I {t['h']}.\n\n{b}\n\n{t['p']}\n\nSee you tomorrow. Maybe."
+    return t, f"Mewonen. Somewhere in the world.\n\nToday I {t['h']}.\n\n{b}\n\n{t['p']}\n\nSee you tomorrow. Maybe."
 
 def voice(text):
     try:
-        r = requests.post(f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}", headers={"xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json"}, json={"text": text, "voice_settings": {"stability": 0.3, "similarity_boost": 0.9, "speed": 0.85}}, timeout=30)
+        r = requests.post(
+            f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}",
+            headers={"xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json"},
+            json={"text": text, "voice_settings": {"stability": 0.55, "similarity_boost": 0.75, "speed": 0.9}},
+            timeout=30
+        )
         if r.status_code == 200:
             p = "/tmp/audio.mp3"
             with open(p, "wb") as f: f.write(r.content)
@@ -46,10 +101,9 @@ def voice(text):
     except: pass
     return None
 
-def bg_video():
-    q = random.choice(["city night", "sunset sky", "rain window", "quiet morning", "clouds", "empty street", "coffee shop"])
+def bg_video(query):
     try:
-        r = requests.get(f"https://pixabay.com/api/videos/?key={PIXABAY_KEY}&q={q}&per_page=5&orientation=vertical", timeout=10)
+        r = requests.get(f"https://pixabay.com/api/videos/?key={PIXABAY_KEY}&q={query}&per_page=5&orientation=vertical", timeout=10)
         hits = r.json().get("hits", [])
         if not hits: return None
         v = random.choice(hits).get("videos", {})
@@ -65,7 +119,7 @@ def bg_video():
 def make_video(audio_path, bg_path):
     try:
         a = AudioFileClip(audio_path)
-        dur = a.duration + 2
+        dur = a.duration + 3
         if bg_path:
             v = VideoFileClip(bg_path)
             if v.duration < dur:
@@ -90,13 +144,13 @@ def make_video(audio_path, bg_path):
 
 def main():
     msg("🎬 Mewonen Engine - Starting...")
-    s = script()
+    t, s = script()
     a = voice(s)
     if not a: msg("Voice failed"); return
-    b = bg_video()
+    b = bg_video(t["bg"])
     v = make_video(a, b)
     if not v: msg("Video failed"); return
-    cap = f"M E W O N E N\n\n{s.split(chr(10))[2]}\n\n💜 mewonnen.com\n\n#mewonen #relatable #humor #viral"
+    cap = f"M E W O N E N\n\n{s.split(chr(10))[2]}\n\n💜 mewonnen.com\n\n#mewonen #relatable #feelings #viral"
     ok = send_vid(v, cap)
     if ok: msg(f"✅ Posted!\n\n{s[:150]}...")
     else: msg("Post failed")
