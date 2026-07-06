@@ -38,7 +38,7 @@ def script():
 
 def voice(text):
     try:
-        r = requests.post(f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}", headers={"xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json"}, json={"text": text, "voice_settings": {"stability": 0.5, "similarity_boost": 0.8}}, timeout=30)
+        r = requests.post(f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}", headers={"xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json"}, json={"text": text, "voice_settings": {"stability": 0.3, "similarity_boost": 0.9, "speed": 0.85}}, timeout=30)
         if r.status_code == 200:
             p = "/tmp/audio.mp3"
             with open(p, "wb") as f: f.write(r.content)
@@ -62,13 +62,12 @@ def bg_video():
     except: pass
     return None
 
-def make_video(audio_path, bg_path):
+def make_video(audio_path, bg_path, script_text):
     try:
         a = AudioFileClip(audio_path)
-        dur = a.duration + 1
+        dur = a.duration + 2
         if bg_path:
             v = VideoFileClip(bg_path)
-            # Loop manually
             if v.duration < dur:
                 repeats = int(dur / v.duration) + 1
                 clips = [v] * repeats
@@ -80,26 +79,38 @@ def make_video(audio_path, bg_path):
             if v.w < 1080: v = v.resized(width=1080)
         else:
             v = ColorClip(size=(1080, 1920), color=(10, 10, 24), duration=dur)
+        
         v = v.with_audio(a)
+        
+        # Watermark Mewonen (top)
+        wm_top = TextClip(text="M E W O N E N", font_size=30, color='white')
+        wm_top = wm_top.with_opacity(0.5).with_position(('center', 0.05), relative=True).with_duration(dur)
+        
+        # URL (bottom)
+        wm_url = TextClip(text="mewonen.com", font_size=28, color='white')
+        wm_url = wm_url.with_opacity(0.6).with_position(('center', 0.92), relative=True).with_duration(dur)
+        
+        final = CompositeVideoClip([v, wm_top, wm_url])
         out = "/tmp/video.mp4"
-        v.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
-        v.close(); a.close()
+        final.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
+        
+        v.close(); a.close(); final.close()
         return out
     except Exception as e:
         print(f"Video error: {e}")
         return None
 
 def main():
-    msg("Mewonen Engine - Starting...")
+    msg("🎬 Mewonen Engine - Starting...")
     s = script()
     a = voice(s)
     if not a: msg("Voice failed"); return
     b = bg_video()
-    v = make_video(a, b)
+    v = make_video(a, b, s)
     if not v: msg("Video failed"); return
-    cap = f"{s.split(chr(10))[2]}\n\nmewonen.com\n\n#mewonen #relatable #humor #viral"
+    cap = f"Mewonen. Somewhere in the world.\n\n{s.split(chr(10))[2]}\n\n💜 mewonnen.com\n\n#mewonen #relatable #humor #viral"
     ok = send_vid(v, cap)
-    if ok: msg(f"Posted!\n\n{s[:150]}...")
+    if ok: msg(f"✅ Posted!\n\n{s[:150]}...")
     else: msg("Post failed")
 
 if __name__ == "__main__":
