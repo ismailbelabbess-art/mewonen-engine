@@ -72,7 +72,6 @@ def make_video(audio_path, bg_path, script):
     try:
         audio = AudioFileClip(audio_path)
         dur = audio.duration + 1
-        
         if bg_path:
             bg_clip = VideoFileClip(bg_path)
             bg_clip = bg_clip.loop(duration=dur) if bg_clip.duration < dur else bg_clip.with_duration(dur)
@@ -81,20 +80,10 @@ def make_video(audio_path, bg_path, script):
             if bg_clip.w < 1080: bg_clip = bg_clip.resized(width=1080)
         else:
             bg_clip = ColorClip(size=(1080, 1920), color=(10, 10, 24), duration=dur)
-        
         bg_clip = bg_clip.with_audio(audio)
-        
-        wm1 = TextClip(text="(c) Mewonen", font_size=35, color='white')
-        wm1 = wm1.with_opacity(0.5).with_position(('center', 0.88), relative=True).with_duration(dur)
-        
-        wm2 = TextClip(text="mewonen.com", font_size=28, color='white')
-        wm2 = wm2.with_opacity(0.4).with_position(('center', 0.94), relative=True).with_duration(dur)
-        
-        final = CompositeVideoClip([bg_clip, wm1, wm2])
         out = "/tmp/video.mp4"
-        final.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
-        
-        bg_clip.close(); final.close(); audio.close()
+        bg_clip.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
+        bg_clip.close(); audio.close()
         return out
     except Exception as e:
         print(f"Video error: {e}")
