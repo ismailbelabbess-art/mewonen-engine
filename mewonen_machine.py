@@ -12,57 +12,50 @@ TELEGRAM_BOT_TOKEN = os.environ.get("MEWONEN_TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("MEWONEN_TELEGRAM_CHAT_ID", "")
 
 SCRIPT_TEMPLATES = [
-    {"hook": "checked my bank account", "body": ["I looked at the number. It looked back at me. Neither of us was happy.", "My balance and my motivation have something in common. They're both low.", "The ATM asked if I wanted a receipt. I said no. I didn't need proof."], "punchline": "Money comes and goes. Mostly goes."},
-    {"hook": "tried to make friends today", "body": ["I smiled at someone in the elevator. They stared at their phone harder.", "I joined a group chat. 200 messages. Not one was for me.", "Being an adult is just sending memes and hoping someone replies."], "punchline": "Maybe tomorrow. Or maybe I'll just stay home."},
-    {"hook": "read the news today", "body": ["Bad news. More bad news. A cute dog. Catastrophe. The dog was fine.", "I scrolled for 40 minutes. I know 47 things to worry about now.", "The world is on fire but there's a new flavor of chips."], "punchline": "I closed the app. The world was still there. Waiting."},
-    {"hook": "went outside today", "body": ["It's too hot. My phone overheated. I overheated. The pavement is cooking.", "A bird looked at me. I think it was judging my life choices.", "Nature is beautiful. Nature is also trying to end us with heat."], "punchline": "I went back inside. The AC is my only friend."},
-    {"hook": "tried to sleep last night", "body": ["2am. My brain replayed every mistake since 2018.", "3am. I solved world hunger. Forgot it by morning.", "4am. Watched penguins. Cried. Not because of the penguins."], "punchline": "Alarm at 7. I aged 10 years overnight."},
-    {"hook": "used a dating app", "body": ["Swiped right 50 times. One match. They were selling crypto.", "Someone asked my hobbies. I said surviving. They unmatched.", "Love in 2026 is sharing a Netflix account."], "punchline": "Maybe I'll adopt another plant."},
-    {"hook": "called my mom", "body": ["She asked if I'm eating well. I was eating dry cereal.", "She asked about love. I told her my plant is doing great.", "She said she's proud. I didn't know I needed that."], "punchline": "Moms know everything."},
-    {"hook": "went to work", "body": ["Three meetings. Two could be emails. One could be a text.", "My boss said we're family. Families don't fire you on Zoom.", "I stared at my screen for 8 hours. It stared back."], "punchline": "I work to live. I work to pay for things to work."},
-    {"hook": "tried to be healthy", "body": ["I bought a salad. It cost more than Netflix.", "I went for a run. My lungs asked why.", "I drank water. Pure. Clean. Boring. I miss soda."], "punchline": "My body is a temple. That wants pizza."},
-    {"hook": "checked social media", "body": ["Everyone is successful. Everyone is on vacation. I'm eating toast.", "I posted a picture. 3 likes. Mom. A bot. An accident.", "Comparison is the thief of joy. But still."], "punchline": "I closed the app. My toast was cold. Life goes on."}
+    {"hook": "checked my bank account", "body": ["I looked at the number. It looked back at me.", "My balance and motivation are both low.", "The ATM asked for a receipt. I declined."], "punchline": "Money comes and goes. Mostly goes."},
+    {"hook": "tried to make friends", "body": ["I smiled. They stared at their phone.", "200 messages. None for me.", "Adulthood is sending memes. Hoping."], "punchline": "Maybe tomorrow. Or not."},
+    {"hook": "read the news", "body": ["Bad news. More bad news. A dog. The dog was fine.", "I scrolled 40 minutes. 47 new worries.", "The world burns. New chips flavor."], "punchline": "I closed the app. The world waited."},
+    {"hook": "went outside", "body": ["Too hot. Phone overheated. I overheated.", "A bird judged me.", "Nature is beautiful. And dangerous."], "punchline": "Back inside. AC is my friend."},
+    {"hook": "tried to sleep", "body": ["2am. Mistakes since 2018. Replay.", "3am. Solved hunger. Forgot.", "4am. Penguins. Cried."], "punchline": "Alarm at 7. Aged 10 years."},
+    {"hook": "used a dating app", "body": ["50 swipes. One match. Selling crypto.", "Hobby: surviving. Unmatched.", "Love is sharing Netflix."], "punchline": "Adopting another plant."},
+    {"hook": "called my mom", "body": ["Eating dry cereal. She asked if I eat well.", "Love life? My plant is thriving.", "She's proud. I needed that."], "punchline": "Moms know everything."},
+    {"hook": "went to work", "body": ["3 meetings. 2 could be emails. 1 a text.", "We're family. Families don't fire on Zoom.", "8 hours. Screen stared back."], "punchline": "I work to afford work."},
+    {"hook": "tried to be healthy", "body": ["Salad costs more than Netflix.", "I ran. Lungs questioned me.", "Water. Pure. Boring. I miss soda."], "punchline": "Temple. Wants pizza."},
+    {"hook": "checked social media", "body": ["Everyone is winning. I'm eating toast.", "Posted. 3 likes. Mom. Bot. Accident.", "Comparison is the thief of joy."], "punchline": "Toast was cold. Life goes on."}
 ]
 
 HASHTAGS = "#mewonen #relatable #humor #life #mood #viral #fyp"
 
-def send_telegram_message(text):
-    try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": text}, timeout=10)
+def send_message(text):
+    try: requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage", json={"chat_id": TELEGRAM_CHAT_ID, "text": text}, timeout=10)
     except: pass
 
-def send_telegram_video(video_path, caption):
+def send_video(path, caption):
     try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendVideo"
-        with open(video_path, "rb") as f:
-            requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "caption": caption}, files={"video": f}, timeout=60)
+        with open(path, "rb") as f:
+            requests.post(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendVideo", data={"chat_id": TELEGRAM_CHAT_ID, "caption": caption}, files={"video": f}, timeout=60)
         return True
     except: return False
 
-def generate_script():
+def gen_script():
     t = random.choice(SCRIPT_TEMPLATES)
     b = random.choice(t["body"])
     return f"Mewonen. Somewhere in the world.\n\nToday I {t['hook']}.\n\n{b}\n\n{t['punchline']}\n\nSee you tomorrow. Maybe."
 
-def generate_voice(script):
+def gen_voice(script):
     try:
-        url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
-        headers = {"xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json"}
-        r = requests.post(url, headers=headers, json={"text": script, "voice_settings": {"stability": 0.5, "similarity_boost": 0.8}}, timeout=30)
+        r = requests.post(f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}", headers={"xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json"}, json={"text": script, "voice_settings": {"stability": 0.5, "similarity_boost": 0.8}}, timeout=30)
         if r.status_code == 200:
             p = "/tmp/audio.mp3"
             with open(p, "wb") as f: f.write(r.content)
             return p
-        return None
-    except: return None
+    except: pass
+    return None
 
-def get_background():
-    queries = ["city night", "sunset sky", "rain window", "quiet morning", "clouds", "empty street", "coffee shop"]
-    q = random.choice(queries)
+def get_bg():
+    q = random.choice(["city night", "sunset sky", "rain window", "quiet morning", "clouds", "empty street", "coffee shop"])
     try:
-        url = f"https://pixabay.com/api/videos/?key={PIXABAY_KEY}&q={q}&per_page=5&orientation=vertical"
-        r = requests.get(url, timeout=10)
+        r = requests.get(f"https://pixabay.com/api/videos/?key={PIXABAY_KEY}&q={q}&per_page=5&orientation=vertical", timeout=10)
         hits = r.json().get("hits", [])
         if not hits: return None
         v = random.choice(hits).get("videos", {})
@@ -72,13 +65,13 @@ def get_background():
                 p = "/tmp/bg.mp4"
                 with open(p, "wb") as f: f.write(r2.content)
                 return p
-        return None
-    except: return None
+    except: pass
+    return None
 
-def create_video(audio_path, bg_path, script):
+def make_video(audio_path, bg_path, script):
     try:
         audio = AudioFileClip(audio_path)
-        dur = audio.duration + 0.5
+        dur = audio.duration + 1
         if bg_path:
             bg = VideoFileClip(bg_path)
             bg = bg.loop(duration=dur) if bg.duration < dur else bg.subclip(0, dur)
@@ -100,17 +93,17 @@ def create_video(audio_path, bg_path, script):
         return None
 
 def main():
-    send_telegram_message("🎬 Mewonen Engine — Starting...")
-    script = generate_script()
-    audio = generate_voice(script)
-    if not audio: send_telegram_message("❌ Voice failed"); return
-    bg = get_background()
-    video = create_video(audio, bg, script)
-    if not video: send_telegram_message("❌ Video failed"); return
+    send_message("🎬 Mewonen Engine — Starting...")
+    script = gen_script()
+    audio = gen_voice(script)
+    if not audio: send_message("❌ Voice failed"); return
+    bg = get_bg()
+    video = make_video(audio, bg, script)
+    if not video: send_message("❌ Video failed"); return
     caption = f"{script.split(chr(10))[2]}\n\n💜 mewonnen.com\n\n{HASHTAGS}"
-    ok = send_telegram_video(video, caption)
-    if ok: send_telegram_message(f"✅ Posted!\n\n📝 {script[:150]}...")
-    else: send_telegram_message("❌ Post failed")
+    ok = send_video(video, caption)
+    if ok: send_message(f"✅ Posted!\n\n📝 {script[:150]}...")
+    else: send_message("❌ Post failed")
 
 if __name__ == "__main__":
     main()
