@@ -62,7 +62,7 @@ def bg_video():
     except: pass
     return None
 
-def make_video(audio_path, bg_path, script_text):
+def make_video(audio_path, bg_path):
     try:
         a = AudioFileClip(audio_path)
         dur = a.duration + 2
@@ -79,22 +79,10 @@ def make_video(audio_path, bg_path, script_text):
             if v.w < 1080: v = v.resized(width=1080)
         else:
             v = ColorClip(size=(1080, 1920), color=(10, 10, 24), duration=dur)
-        
         v = v.with_audio(a)
-        
-        # Watermark Mewonen (top)
-        wm_top = TextClip(text="M E W O N E N", font_size=30, color='white')
-        wm_top = wm_top.with_opacity(0.5).with_position(('center', 0.05), relative=True).with_duration(dur)
-        
-        # URL (bottom)
-        wm_url = TextClip(text="mewonen.com", font_size=28, color='white')
-        wm_url = wm_url.with_opacity(0.6).with_position(('center', 0.92), relative=True).with_duration(dur)
-        
-        final = CompositeVideoClip([v, wm_top, wm_url])
         out = "/tmp/video.mp4"
-        final.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
-        
-        v.close(); a.close(); final.close()
+        v.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
+        v.close(); a.close()
         return out
     except Exception as e:
         print(f"Video error: {e}")
@@ -106,9 +94,9 @@ def main():
     a = voice(s)
     if not a: msg("Voice failed"); return
     b = bg_video()
-    v = make_video(a, b, s)
+    v = make_video(a, b)
     if not v: msg("Video failed"); return
-    cap = f"Mewonen. Somewhere in the world.\n\n{s.split(chr(10))[2]}\n\n💜 mewonnen.com\n\n#mewonen #relatable #humor #viral"
+    cap = f"M E W O N E N\n\n{s.split(chr(10))[2]}\n\n💜 mewonnen.com\n\n#mewonen #relatable #humor #viral"
     ok = send_vid(v, cap)
     if ok: msg(f"✅ Posted!\n\n{s[:150]}...")
     else: msg("Post failed")
