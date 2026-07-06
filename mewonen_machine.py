@@ -74,15 +74,15 @@ def make_video(audio_path, bg_path, script):
         dur = audio.duration + 1
         if bg_path:
             bg = VideoFileClip(bg_path)
-            bg = bg.loop(duration=dur) if bg.duration < dur else bg.subclip(0, dur)
-            bg = bg.resize(height=1920)
-            if bg.w > 1080: bg = bg.crop(x_center=bg.w/2, width=1080)
-            if bg.w < 1080: bg = bg.resize(width=1080)
+            bg = bg.loop(duration=dur) if bg.duration < dur else bg.with_duration(dur)
+            bg = bg.resized(height=1920)
+            if bg.w > 1080: bg = bg.cropped(x_center=bg.w/2, width=1080)
+            if bg.w < 1080: bg = bg.resized(width=1080)
         else:
             bg = ColorClip(size=(1080, 1920), color=(10, 10, 24), duration=dur)
-        bg = bg.set_audio(audio)
-        wm1 = TextClip("© Mewonen", fontsize=35, color='white', stroke_color='black', stroke_width=1).set_opacity(0.5).set_position(('center', 0.88), relative=True).set_duration(dur)
-        wm2 = TextClip("mewonen.com", fontsize=28, color='white', stroke_color='black', stroke_width=1).set_opacity(0.4).set_position(('center', 0.94), relative=True).set_duration(dur)
+        bg = bg.with_audio(audio)
+        wm1 = TextClip(text="© Mewonen", font_size=35, color='white', stroke_color='black', stroke_width=1).with_opacity(0.5).with_position(('center', 0.88), relative=True).with_duration(dur)
+        wm2 = TextClip(text="mewonen.com", font_size=28, color='white', stroke_color='black', stroke_width=1).with_opacity(0.4).with_position(('center', 0.94), relative=True).with_duration(dur)
         final = CompositeVideoClip([bg, wm1, wm2])
         out = "/tmp/video.mp4"
         final.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
