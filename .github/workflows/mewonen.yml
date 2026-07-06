@@ -26,4 +26,8 @@ jobs:
           PIXABAY_KEY: ${{ secrets.PIXABAY_KEY }}
           MEWONEN_TELEGRAM_BOT_TOKEN: ${{ secrets.MEWONEN_TELEGRAM_BOT_TOKEN }}
           MEWONEN_TELEGRAM_CHAT_ID: ${{ secrets.MEWONEN_TELEGRAM_CHAT_ID }}
+          CALM_TELEGRAM_BOT_TOKEN: ${{ secrets.CALM_TELEGRAM_BOT_TOKEN }}
+          CALM_TELEGRAM_CHAT_ID: ${{ secrets.CALM_TELEGRAM_CHAT_ID }}
+          SAMURAI_TELEGRAM_BOT_TOKEN: ${{ secrets.SAMURAI_TELEGRAM_BOT_TOKEN }}
+          SAMURAI_TELEGRAM_CHAT_ID: ${{ secrets.SAMURAI_TELEGRAM_CHAT_ID }}
         run: python mewonen_machine.py
