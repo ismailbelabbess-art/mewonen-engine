@@ -84,10 +84,10 @@ def make_video(audio_path, bg_path, script):
         
         bg_clip = bg_clip.with_audio(audio)
         
-        wm1 = TextClip(font="DejaVu-Sans", text="(c) Mewonen", font_size=35, color='white', stroke_color='black', stroke_width=1)
+        wm1 = TextClip(text="(c) Mewonen", font_size=35, color='white')
         wm1 = wm1.with_opacity(0.5).with_position(('center', 0.88), relative=True).with_duration(dur)
         
-        wm2 = TextClip(font="DejaVu-Sans", text="mewonen.com", font_size=28, color='white', stroke_color='black', stroke_width=1)
+        wm2 = TextClip(text="mewonen.com", font_size=28, color='white')
         wm2 = wm2.with_opacity(0.4).with_position(('center', 0.94), relative=True).with_duration(dur)
         
         final = CompositeVideoClip([bg_clip, wm1, wm2])
