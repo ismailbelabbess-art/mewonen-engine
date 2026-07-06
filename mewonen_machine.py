@@ -2,7 +2,7 @@ import os
 import random
 import requests
 from datetime import datetime
-from moviepy.editor import *
+from moviepy import *
 import numpy as np
 
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
