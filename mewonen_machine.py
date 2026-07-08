@@ -126,10 +126,10 @@ def create_background(emoji, phrase):
         draw.text((px, 1000), short_phrase, fill="#a78bfa", font=font_p)
         
         # Logo Mewonen
-        draw.text((460, 150), "M E W O N E N", fill="rgba(167,139,250,0.5)", font=font_p)
+        draw.text((460, 150), "M E W O N E N", fill=(167, 139, 250), font=font_p)
         
         # URL
-        draw.text((400, 1750), "mewonen.com", fill="rgba(255,255,255,0.3)", font=font_p)
+        draw.text((400, 1750), "mewonen.com", fill=(100, 100, 100), font=font_p)
         
         # Bouton simulé
         draw.rounded_rectangle([340, 1650, 740, 1720], radius=25, fill=(124, 58, 237, 255))
