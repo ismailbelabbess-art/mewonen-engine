@@ -3,6 +3,7 @@ from moviepy import *
 
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
 VOICE_ID = os.environ.get("MEWONEN_VOICE_ID", "")
+UNSPLASH_KEY = os.environ.get("UNSPLASH_KEY", "")
 MEWONEN_TOKEN = os.environ.get("MEWONEN_TELEGRAM_BOT_TOKEN", "")
 MEWONEN_CHAT = os.environ.get("MEWONEN_TELEGRAM_CHAT_ID", "")
 CALM_TOKEN = os.environ.get("CALM_TELEGRAM_BOT_TOKEN", "")
@@ -16,20 +17,20 @@ TEMPLATES = [
         "ja": "4人に1人の大人が孤独を感じている。\n\n若者の73%が孤独を感じている。\n\n私たちはかつてないほどつながっている。\n\nそして、かつてないほど孤立している。\n\nMewonenもそう感じている。\n\n今日、気持ちを描いてみて。\n\n助けになるから。\n\nmewonen.com 💜"
     },
     {
-        "en": "I walked through the city today.\n\nHundreds of people.\n\nNobody looked up.\n\nEveryone on their phone.\n\nEveryone somewhere else.\n\nI felt invisible.\n\nSo I drew my mood.\n\nAnd somehow...\n\nI felt a little less alone.\n\nmewonen.com 💜",
-        "ja": "今日、街を歩いた。\n\n何百人もの人。\n\n誰も顔を上げなかった。\n\nみんなスマホを見ている。\n\nみんなどこか別の場所にいる。\n\n私は透明になった気がした。\n\nだから気持ちを描いた。\n\nそうしたら…\n\n少しだけ孤独が減った気がした。\n\nmewonen.com 💜"
+        "en": "I walked through the city today.\n\nHundreds of people.\n\nNobody looked up.\n\nEveryone on their phone.\n\nI felt invisible.\n\nSo I drew my mood.\n\nAnd somehow... I felt a little less alone.\n\nmewonen.com 💜",
+        "ja": "今日、街を歩いた。\n\n何百人もの人。誰も顔を上げなかった。\n\nみんなスマホを見ている。\n\n私は透明になった気がした。\n\nだから気持ちを描いた。\n\n少しだけ孤独が減った気がした。\n\nmewonen.com 💜"
     },
     {
-        "en": "I'm in 12 group chats.\n\n200 messages a day.\n\nNot one of them asks how I really feel.\n\nSo I asked myself.\n\nI drew my mood.\n\nAt least Mewonen noticed.\n\nmewonen.com 💜",
+        "en": "I'm in 12 group chats.\n\n200 messages a day.\n\nNot one asks how I really feel.\n\nSo I asked myself.\n\nI drew my mood.\n\nAt least Mewonen noticed.\n\nmewonen.com 💜",
         "ja": "12のグループチャットに入っている。\n\n1日に200件のメッセージ。\n\n誰も本当の気持ちを聞いてこない。\n\nだから自分に聞いてみた。\n\n気持ちを描いた。\n\n少なくともMewonenは気づいた。\n\nmewonen.com 💜"
     },
     {
-        "en": "It's 3am.\n\nCan't sleep.\n\nMy brain says nobody cares.\n\nBut somewhere, someone else is awake too.\n\nFeeling the same thing.\n\nYou're not alone.\n\nDraw it.\n\nmewonen.com 💜",
-        "ja": "午前3時。\n\n眠れない。\n\n脳が「誰も気にしていない」と言う。\n\nでもどこかで、他の誰かも起きている。\n\n同じことを感じている。\n\nあなたは一人じゃない。\n\n描いてみて。\n\nmewonen.com 💜"
+        "en": "It's 3am. Can't sleep.\n\nMy brain says nobody cares.\n\nBut somewhere, someone else is awake too.\n\nFeeling the same thing.\n\nYou're not alone. Draw it.\n\nmewonen.com 💜",
+        "ja": "午前3時。眠れない。\n\n脳が「誰も気にしていない」と言う。\n\nでもどこかで、他の誰かも起きている。\n\n同じことを感じている。\n\nあなたは一人じゃない。描いてみて。\n\nmewonen.com 💜"
     },
     {
-        "en": "The opposite of loneliness isn't company.\n\nIt's being understood.\n\nSomeone out there feels exactly what you feel.\n\nRight now.\n\nDraw it.\n\nLet Mewonen understand.\n\nmewonen.com 💜",
-        "ja": "孤独の反対は、誰かと一緒にいることじゃない。\n\n理解されることだ。\n\nどこかに、あなたと同じ気持ちの人がいる。\n\n今この瞬間も。\n\n描いてみて。\n\nMewonenに理解させて。\n\nmewonen.com 💜"
+        "en": "The opposite of loneliness isn't company.\n\nIt's being understood.\n\nSomeone out there feels exactly what you feel.\n\nRight now.\n\nDraw it. Let Mewonen understand.\n\nmewonen.com 💜",
+        "ja": "孤独の反対は、誰かと一緒にいることじゃない。\n\n理解されることだ。\n\nどこかに、あなたと同じ気持ちの人がいる。\n\n今この瞬間も。\n\n描いてみて。Mewonenに理解させて。\n\nmewonen.com 💜"
     }
 ]
 
@@ -59,57 +60,40 @@ def voice(text):
     except: pass
     return None
 
-def make_video(audio_path, script_text):
+def get_bg_image():
+    """Récupère une image de solitude depuis Unsplash"""
+    queries = ["loneliness", "alone", "solitude", "sad person", "empty street", "alone crowd", "lonely night"]
+    q = random.choice(queries)
     try:
-        from PIL import Image, ImageDraw, ImageFont
-        import textwrap
-        
+        r = requests.get(f"https://api.unsplash.com/photos/random?query={q}&orientation=portrait&client_id={UNSPLASH_KEY}", timeout=10)
+        if r.status_code == 200:
+            data = r.json()
+            img_url = data["urls"]["regular"]
+            # Télécharger l'image
+            r2 = requests.get(img_url, timeout=20)
+            p = "/tmp/bg.jpg"
+            with open(p, "wb") as f: f.write(r2.content)
+            return p
+    except: pass
+    return None
+
+def make_video(audio_path, bg_image_path):
+    try:
         a = AudioFileClip(audio_path)
         dur = a.duration + 3
         
-        # Fond noir
-        img = Image.new("RGB", (1080, 1920), "#050510")
-        draw = ImageDraw.Draw(img)
+        if bg_image_path:
+            v = ImageClip(bg_image_path, duration=dur)
+            v = v.resized(height=1920)
+            if v.w > 1080: v = v.cropped(x_center=v.w/2, width=1080)
+            if v.w < 1080: v = v.resized(width=1080)
+        else:
+            v = ColorClip(size=(1080, 1920), color=(5, 5, 15), duration=dur)
         
-        try:
-            font_title = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 55)
-            font_body = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 38)
-            font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
-        except:
-            font_title = font_body = font_small = ImageFont.load_default()
-        
-        # Titre
-        draw.text((100, 200), "THE LONELINESS", fill=(167, 139, 250), font=font_title)
-        draw.text((100, 270), "EPIDEMIC", fill=(255, 255, 255), font=font_title)
-        draw.rectangle([100, 350, 980, 352], fill=(167, 139, 250, 80))
-        
-        # Phrases
-        lines = script_text.split('\n')
-        y = 420
-        for line in lines:
-            line = line.strip()
-            if line and 'mewonen.com' not in line:
-                wrapped = textwrap.wrap(line, width=35)
-                for wline in wrapped:
-                    draw.text((100, y), wline, fill=(220, 220, 240), font=font_body)
-                    y += 55
-                y += 20
-        
-        # URL
-        draw.text((350, 1780), "mewonen.com", fill=(100, 100, 100), font=font_small)
-        draw.text((280, 1830), "You are not alone.", fill=(167, 139, 250, 120), font=font_small)
-        
-        bg_path = "/tmp/bg.png"
-        img.save(bg_path)
-        
-        bg_clip = ImageClip(bg_path, duration=dur)
-        bg_clip = bg_clip.resized(height=1920)
-        if bg_clip.w > 1080: bg_clip = bg_clip.cropped(x_center=bg_clip.w/2, width=1080)
-        bg_clip = bg_clip.with_audio(a)
-        
+        v = v.with_audio(a)
         out = "/tmp/video.mp4"
-        bg_clip.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
-        bg_clip.close(); a.close()
+        v.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
+        v.close(); a.close()
         return out
     except Exception as e:
         print(f"Video error: {e}")
@@ -125,7 +109,8 @@ def main():
     en_audio = voice(en_script)
     if not en_audio: msg(MEWONEN_TOKEN, MEWONEN_CHAT, "Voice failed"); return
     
-    en_video = make_video(en_audio, en_script)
+    bg = get_bg_image()
+    en_video = make_video(en_audio, bg)
     if not en_video: msg(MEWONEN_TOKEN, MEWONEN_CHAT, "Video failed"); return
     
     cap_en = f"🧠 The loneliness epidemic is real.\n\nYou're not alone.\n\n✍️ Draw how you feel: mewonnen.com 💜\n\n#MewonenSolitude #LonelinessEpidemic #MentalHealth #FYP"
@@ -134,7 +119,7 @@ def main():
     
     ja_audio = voice(ja_script)
     if ja_audio:
-        ja_video = make_video(ja_audio, ja_script)
+        ja_video = make_video(ja_audio, bg)
         if ja_video:
             cap_ja = f"🧠 孤独のパンデミックは現実です。\n\nあなたは一人じゃない。\n\n✍️ 気持ちを描いて：mewonen.com 💜\n\n#MewonenSolitude #孤独 #メンタルヘルス"
             if SAMURAI_TOKEN and SAMURAI_CHAT: send_vid(SAMURAI_TOKEN, SAMURAI_CHAT, ja_video, cap_ja)
