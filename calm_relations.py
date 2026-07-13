@@ -8,22 +8,22 @@ CALM_TOKEN = os.environ.get("CALM_TELEGRAM_BOT_TOKEN", "")
 CALM_CHAT = os.environ.get("CALM_TELEGRAM_CHAT_ID", "")
 
 SCRIPTS = [
-    # Homme-Femme
+    # Homme-Femme — Amour safe
     {"script": "He looked at her across the table. Three years together. She was still the most beautiful thing he'd ever seen. He didn't say it. He just smiled. She smiled back. That was enough.", "type": "couple", "bg": "couple dinner table"},
-    {"script": "She was angry. He was silent. The argument had lasted an hour. Then he stood up, walked to the kitchen, and made her tea. The same way she liked it. She cried. Not because of the tea.", "type": "couple", "bg": "couple kitchen home"},
-    {"script": "They met when they were 19. Now they're 67. He still holds her hand when they cross the street. She still laughs at his jokes. Even the bad ones.", "type": "couple", "bg": "elderly couple walking"},
+    {"script": "She had a bad day. He didn't ask questions. He just made her tea and put on her favorite movie. Sometimes love is not words. It's tea and a movie.", "type": "couple", "bg": "couple home cozy"},
+    {"script": "They were 19 when they met. Now they're 67. He still opens the door for her. She still laughs at his jokes. Even the ones she's heard a thousand times.", "type": "couple", "bg": "elderly couple park"},
     
-    # Mère-Fils
-    {"script": "He hadn't called his mom in two weeks. Work. Life. Excuses. When he finally did, she didn't complain. She just said: 'I knew you'd call when you were ready.' He cried after hanging up.", "type": "mother son", "bg": "phone call home"},
-    {"script": "She watched her son sleep. He was 24 now. But to her, he was still the little boy who held her hand on the first day of school. She kissed his forehead. He didn't wake up. But he smiled.", "type": "mother son", "bg": "mother sleeping child"},
+    # Mère-Fils — Tendresse safe
+    {"script": "He hadn't called his mom in two weeks. Work. Life. Excuses. When he finally did, she didn't complain. She just said: 'I knew you'd call when you were ready.' He smiled. She always knew.", "type": "mother son", "bg": "phone call home"},
+    {"script": "She kept every drawing he made as a child. Every single one. He's 30 now. She still has them in a box under her bed. 'My treasures,' she calls them.", "type": "mother son", "bg": "mother looking at drawings"},
     
-    # Père-Fille
-    {"script": "He taught her how to ride a bike. How to drive. How to stand up for herself. Now she's getting married. He looks at her and sees the little girl who once fell asleep on his shoulder. He smiles. He doesn't cry. Not yet.", "type": "father daughter", "bg": "father daughter wedding"},
-    {"script": "She called her dad at 2am. He answered on the first ring. 'I'm scared,' she said. 'I know,' he said. 'But I'm here.' They talked until sunrise.", "type": "father daughter", "bg": "phone call night"},
+    # Père-Fille — Safe et positif
+    {"script": "He taught her how to ride a bike. Holding the seat. Running behind her. Then letting go. She fell. He picked her up. 'Again,' she said. And he smiled. That's exactly what he wanted to hear.", "type": "father daughter", "bg": "father teaching bike"},
+    {"script": "She got her first job. She called her dad. He didn't say much. But the next day, a package arrived. A pen. With her name engraved. 'For my daughter,' it said. She still uses it.", "type": "father daughter", "bg": "gift package pen"},
     
-    # Frère-Soeur
-    {"script": "They fought over everything as kids. Toys. TV. The last piece of cake. Now he's moving to another country. She hugs him at the airport. 'Don't forget me,' she says. 'Impossible,' he replies.", "type": "siblings", "bg": "airport goodbye"},
-    {"script": "She was being bullied at school. He was two years older. He walked into the principal's office and didn't leave until they listened. That night, she made him a drawing. He still has it. 15 years later.", "type": "siblings", "bg": "brother sister home"}
+    # Frère-Soeur — Safe et touchant
+    {"script": "They fought over everything as kids. The remote. The last cookie. Who sat in the front seat. Now they live in different countries. But every Sunday, they video call. Every Sunday. Without fail.", "type": "siblings", "bg": "siblings video call"},
+    {"script": "She was nervous about her first day of high school. He was two years older. He didn't say anything. He just drew a little smiley face on her notebook. She still has it. 12 years later.", "type": "siblings", "bg": "school notebook smiley"}
 ]
 
 def msg(text):
