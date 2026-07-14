@@ -1,4 +1,4 @@
-import os, random, requests, json
+import os, random, requests
 from moviepy import *
 
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
@@ -6,7 +6,6 @@ VOICE_ID = os.environ.get("MEWONEN_VOICE_ID", "")
 TELEGRAM_BOT_TOKEN = os.environ.get("MEWONEN_TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("MEWONEN_TELEGRAM_CHAT_ID", "")
 
-# Messages de secours si aucun message réel n'est disponible
 FALLBACKS = [
     {"male": "I don't approach women anymore. Not because I don't want to. Because I'm afraid of being called a creep.", "female": "I don't make the first move anymore. Not because I don't want to. Because every time I did, he stopped trying."},
     {"male": "I pretend I'm fine being single. Truth is, I'm terrified I'll die alone.", "female": "I pretend I'm fine being single. Truth is, I'm tired of giving everything and getting nothing back."},
@@ -49,56 +48,48 @@ def make_video(male_text, female_text):
         img = Image.new("RGB", (1080, 1920), "#000000")
         draw = ImageDraw.Draw(img)
         
-        # Côté gauche (bleu)
         for y in range(1920):
-            r = int(10 + (y/1920)*30)
-            g = int(20 + (y/1920)*60)
-            b = int(50 + (y/1920)*90)
-            draw.line([(0, y), (540, y)], fill=(r, g, b))
+            r, g, b = int(10+(y/1920)*30), int(20+(y/1920)*60), int(50+(y/1920)*90)
+            draw.line([(0,y), (540,y)], fill=(r,g,b))
+            r, g, b = int(50+(y/1920)*90), int(10+(y/1920)*30), int(30+(y/1920)*60)
+            draw.line([(540,y), (1080,y)], fill=(r,g,b))
         
-        # Côté droit (rose)
-        for y in range(1920):
-            r = int(50 + (y/1920)*90)
-            g = int(10 + (y/1920)*30)
-            b = int(30 + (y/1920)*60)
-            draw.line([(540, y), (1080, y)], fill=(r, g, b))
+        draw.line([(540,0), (540,1920)], fill=(255,255,255,40), width=2)
         
-        # Ligne centrale
-        draw.line([(540, 0), (540, 1920)], fill=(255, 255, 255, 40), width=2)
-        
-        # Titre
         try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 35)
+            font_big = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 40)
+            font_sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
         except:
-            font = ImageFont.load_default()
+            font_big = font_sm = ImageFont.load_default()
         
-        draw.text((200, 100), "HIS SIDE", fill=(255, 255, 255, 180), font=font)
-        draw.text((620, 100), "HER SIDE", fill=(255, 255, 255, 180), font=font)
+        draw.text((180, 80), "HIS SIDE", fill=(255,255,255,200), font=font_big)
+        draw.text((620, 80), "HER SIDE", fill=(255,255,255,200), font=font_big)
         
-        # Texte gauche (homme)
-        words_m = male_text.split()[:30]
-        male_display = " ".join(words_m)
-        y = 400
-        for line in [male_display[i:i+25] for i in range(0, len(male_display), 25)]:
-            draw.text((60, y), line, fill=(255, 255, 255), font=font)
+        # Texte gauche
+        words = male_text.split()[:25]
+        txt = " ".join(words)
+        y = 300
+        for line in [txt[i:i+22] for i in range(0, len(txt), 22)]:
+            draw.text((50, y), line, fill=(255,255,255), font=font_sm)
             y += 50
         
-        # Texte droite (femme)
-        words_f = female_text.split()[:30]
-        female_display = " ".join(words_f)
-        y = 400
-        for line in [female_display[i:i+25] for i in range(0, len(female_display), 25)]:
-            draw.text((580, y), line, fill=(255, 255, 255), font=font)
+        # Texte droite
+        words = female_text.split()[:25]
+        txt = " ".join(words)
+        y = 300
+        for line in [txt[i:i+22] for i in range(0, len(txt), 22)]:
+            draw.text((580, y), line, fill=(255,255,255), font=font_sm)
             y += 50
+        
+        # Watermark
+        draw.text((30, 1850), "© The Mirror", fill=(255,255,255,60), font=font_sm)
         
         # Phrase finale
-        draw.text((350, 1700), "Two sides. Same pain.", fill=(255, 255, 255, 200), font=font)
-        draw.text((420, 1800), "themirror.two", fill=(255, 255, 255, 80), font=font)
+        draw.text((250, 1650), "Two sides. Same pain.", fill=(255,255,255,200), font=font_big)
         
         img_path = "/tmp/mirror_bg.png"
         img.save(img_path)
         
-        # Créer la vidéo silencieuse
         bg = ImageClip(img_path, duration=12)
         out = "/tmp/mirror.mp4"
         bg.write_videofile(out, codec='libx264', fps=24, preset='ultrafast', threads=2, logger=None)
@@ -110,15 +101,9 @@ def make_video(male_text, female_text):
 
 def main():
     msg("🪞 The Mirror - Starting...")
-    
-    # Choisir un message
     f = random.choice(FALLBACKS)
-    male_text = f["male"]
-    female_text = f["female"]
-    
-    video = make_video(male_text, female_text)
+    video = make_video(f["male"], f["female"])
     if not video: msg("Video failed"); return
-    
     cap = f"🪞 Two sides. Same pain.\n\nNew theme every day.\n\n#TheMirror #Relationships #MenAndWomen #FYP"
     send_vid(video, cap)
     msg("✅ Posted!")
