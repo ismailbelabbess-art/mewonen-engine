@@ -2,13 +2,32 @@ import os, random, requests
 from moviepy import *
 
 PEXELS_KEY = os.environ.get("PEXELS_KEY", "")
+ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
+VOICE_ID = os.environ.get("MEWONEN_VOICE_ID", "")
 TELEGRAM_BOT_TOKEN = os.environ.get("MEWONEN_TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("MEWONEN_TELEGRAM_CHAT_ID", "")
 
-FALLBACKS = [
-    {"male": "I don't approach women anymore. I'm afraid of being called a creep.", "female": "I don't make the first move anymore. He stopped trying."},
-    {"male": "I pretend I'm fine. Truth is, I'm terrified I'll die alone.", "female": "I pretend I'm fine. I'm tired of giving everything."},
-    {"male": "I was taught not to cry. So I smile. And I'm breaking.", "female": "I was taught to be nice. So I say nothing."},
+SCRIPTS = [
+    {
+        "male": "I don't approach women anymore. I'm afraid of being called a creep.",
+        "female": "I don't make the first move anymore. Every time I did, he stopped trying."
+    },
+    {
+        "male": "I pretend I'm fine being single. Truth is, I'm terrified I'll die alone.",
+        "female": "I pretend I'm fine. Truth is, I'm tired of giving everything and getting nothing."
+    },
+    {
+        "male": "I was taught not to cry. So I smile. And I'm breaking inside.",
+        "female": "I was taught to be nice. So I say nothing. And I'm screaming inside."
+    },
+    {
+        "male": "I work 60 hours a week. Not for me. For them.",
+        "female": "I do everything for everyone. And nobody asks if I'm okay."
+    },
+    {
+        "male": "I still think about her. 3 years later. I never told anyone.",
+        "female": "I still think about him. 3 years later. I pretend I've moved on."
+    }
 ]
 
 def msg(text):
@@ -22,76 +41,168 @@ def send_vid(path, caption):
         return True
     except: return False
 
-def get_image(query):
+def voice(text, pitch="normal"):
+    """Génère la voix via ElevenLabs"""
     try:
-        r = requests.get(f"https://api.pexels.com/v1/search?query={query}&per_page=3&orientation=portrait", headers={"Authorization": PEXELS_KEY}, timeout=10)
-        photos = r.json().get("photos", [])
-        if not photos: return None
-        url = random.choice(photos)["src"]["medium"]
-        r2 = requests.get(url, timeout=20)
-        p = "/tmp/face.jpg"
-        with open(p, "wb") as f: f.write(r2.content)
-        return p
+        r = requests.post(
+            f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}",
+            headers={"xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json"},
+            json={
+                "text": text,
+                "voice_settings": {
+                    "stability": 0.5,
+                    "similarity_boost": 0.8,
+                    "speed": 0.9
+                }
+            },
+            timeout=30
+        )
+        if r.status_code == 200:
+            p = f"/tmp/audio_{random.randint(1,99999)}.mp3"
+            with open(p, "wb") as f: f.write(r.content)
+            return p
     except: pass
     return None
 
-def make_video(male_text, female_text):
+def get_face_video(query):
+    """Cherche une vidéo de visage sur Pexels"""
+    try:
+        url = f"https://api.pexels.com/videos/search?query={query}&per_page=5&orientation=portrait&size=small"
+        r = requests.get(url, headers={"Authorization": PEXELS_KEY}, timeout=10)
+        videos = r.json().get("videos", [])
+        if not videos:
+            return None
+        v = random.choice(videos)
+        files = v.get("video_files", [])
+        # Prendre le fichier le plus léger
+        best = None
+        for f in files:
+            if f.get("width", 0) <= 720:
+                best = f
+                break
+        if not best and files:
+            best = files[-1]
+        if best:
+            r2 = requests.get(best["link"], timeout=30)
+            p = f"/tmp/face_{random.randint(1,99999)}.mp4"
+            with open(p, "wb") as f: f.write(r2.content)
+            return p
+    except: pass
+    return None
+
+def make_video(male_audio, female_audio, male_text, female_text):
+    """Crée la vidéo finale avec écran divisé"""
     try:
         from PIL import Image, ImageDraw, ImageFont
         
-        male_img = get_image("man face portrait")
-        female_img = get_image("woman face portrait")
+        # Durée basée sur les audios
+        a_m = AudioFileClip(male_audio)
+        a_f = AudioFileClip(female_audio)
         
-        # Créer le fond divisé
-        out_img = Image.new("RGB", (1080, 1920), "#000000")
-        draw = ImageDraw.Draw(out_img)
+        # Fond divisé bleu/rose
+        img = Image.new("RGB", (1080, 1920), "#000000")
+        draw = ImageDraw.Draw(img)
         
-        if male_img:
-            m = Image.open(male_img).resize((540, 1920))
-            out_img.paste(m, (0, 0))
-        else:
-            for y in range(1920): draw.line([(0,y),(540,y)], fill=(13,59,102))
+        # Moitié gauche (bleu)
+        for y in range(1920):
+            r = int(10 + (y/1920)*25)
+            g = int(20 + (y/1920)*50)
+            b = int(50 + (y/1920)*80)
+            draw.line([(0, y), (540, y)], fill=(r, g, b))
         
-        if female_img:
-            f = Image.open(female_img).resize((540, 1920))
-            out_img.paste(f, (540, 0))
-        else:
-            for y in range(1920): draw.line([(540,y),(1080,y)], fill=(102,29,59))
+        # Moitié droite (rose)
+        for y in range(1920):
+            r = int(50 + (y/1920)*80)
+            g = int(10 + (y/1920)*25)
+            b = int(30 + (y/1920)*55)
+            draw.line([(540, y), (1080, y)], fill=(r, g, b))
         
         # Ligne centrale
-        draw.line([(540,0),(540,1920)], fill=(255,255,255,80), width=3)
+        draw.line([(540, 0), (540, 1920)], fill=(255, 255, 255, 60), width=3)
         
         try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
+            font_big = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
+            font_sm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 26)
         except:
-            font = ImageFont.load_default()
+            font_big = font_sm = ImageFont.load_default()
         
-        # Texte homme (bas à gauche)
-        draw.text((20, 1700), male_text[:70], fill=(255,255,255), font=font)
-        # Texte femme (bas à droite)
-        draw.text((560, 1700), female_text[:70], fill=(255,255,255), font=font)
-        # Final
-        draw.text((250, 1820), "Two sides. Same pain.", fill=(255,255,255,200), font=font)
+        # Labels
+        draw.text((200, 80), "HIS SIDE", fill=(255, 255, 255, 200), font=font_big)
+        draw.text((650, 80), "HER SIDE", fill=(255, 255, 255, 200), font=font_big)
+        
+        # Texte homme (gauche)
+        words = male_text.split()[:20]
+        txt = " ".join(words)
+        y = 300
+        for line in [txt[i:i+20] for i in range(0, len(txt), 20)]:
+            draw.text((40, y), line, fill=(255, 255, 255), font=font_sm)
+            y += 45
+        
+        # Texte femme (droite)
+        words = female_text.split()[:20]
+        txt = " ".join(words)
+        y = 300
+        for line in [txt[i:i+20] for i in range(0, len(txt), 20)]:
+            draw.text((580, y), line, fill=(255, 255, 255), font=font_sm)
+            y += 45
+        
+        # Phrase finale
+        draw.text((250, 1650), "Two sides. Same pain.", fill=(255, 255, 255, 220), font=font_big)
+        draw.text((350, 1750), "@the.mirror.two", fill=(255, 255, 255, 120), font=font_sm)
+        
         # Watermark
-        draw.text((30, 30), "© The Mirror", fill=(255,255,255,60), font=font)
+        draw.text((30, 1850), "© The Mirror", fill=(255, 255, 255, 50), font=font_sm)
         
         img_path = "/tmp/mirror_bg.png"
-        out_img.save(img_path)
+        img.save(img_path)
         
-        bg = ImageClip(img_path, duration=10)
+        # Créer la vidéo
+        dur = a_m.duration + a_f.duration + 2
+        bg = ImageClip(img_path, duration=dur)
+        
+        # Combiner les audios
+        silence = AudioClip(duration=0.5, fps=44100)
+        combined = concatenate_audioclips([a_m, silence, a_f])
+        bg = bg.with_audio(combined)
+        
         out = "/tmp/mirror.mp4"
-        bg.write_videofile(out, codec='libx264', fps=24, preset='ultrafast', threads=2, logger=None)
+        bg.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
         bg.close()
         return out
+        
     except Exception as e:
         print(f"Video error: {e}")
-        return None
+        # Fallback simple
+        try:
+            dur = a_m.duration + 2
+            bg = ImageClip(img_path, duration=dur)
+            bg = bg.with_audio(a_m)
+            out = "/tmp/mirror.mp4"
+            bg.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
+            bg.close()
+            return out
+        except:
+            return None
 
 def main():
     msg("🪞 The Mirror - Starting...")
-    f = random.choice(FALLBACKS)
-    video = make_video(f["male"], f["female"])
-    if not video: msg("Video failed"); return
+    
+    s = random.choice(SCRIPTS)
+    
+    # Générer les voix
+    male_audio = voice(s["male"])
+    female_audio = voice(s["female"])
+    
+    if not male_audio or not female_audio:
+        msg("Voice failed")
+        return
+    
+    # Créer la vidéo
+    video = make_video(male_audio, female_audio, s["male"], s["female"])
+    if not video:
+        msg("Video failed")
+        return
+    
     cap = f"🪞 Two sides. Same pain.\n\n@the.mirror.two\n\n#TheMirror #Relationships #FYP"
     send_vid(video, cap)
     msg("✅ Posted!")
