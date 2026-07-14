@@ -43,32 +43,27 @@ def voice(text, voice_id):
 
 def make_video(male_audio, female_audio):
     try:
+        from PIL import Image, ImageDraw
+        
         a_m = AudioFileClip(male_audio)
         a_f = AudioFileClip(female_audio)
-        dur = max(a_m.duration, a_f.duration) + 3
+        dur = a_m.duration + a_f.duration + 3
         
-        # Fond bleu à gauche, rose à droite
-        from PIL import Image, ImageDraw
+        # Fond bleu/rose
         img = Image.new("RGB", (1080, 1920), "#000000")
         draw = ImageDraw.Draw(img)
         for y in range(1920):
-            draw.line([(0,y),(540,y)], fill=(13,59,102,255))
-            draw.line([(540,y),(1080,y)], fill=(102,29,59,255))
+            draw.line([(0,y),(540,y)], fill=(13,59,102))
+            draw.line([(540,y),(1080,y)], fill=(102,29,59))
         draw.line([(540,0),(540,1920)], fill=(255,255,255,60), width=3)
         bg_path = "/tmp/mirror_bg.png"
         img.save(bg_path)
         
         bg = ImageClip(bg_path, duration=dur)
         
-        # Ajouter les audios (décalés)
-        male_clip = AudioFileClip(male_audio)
-        female_clip = AudioFileClip(female_audio)
-        
-        # Mixer les audios (homme puis femme)
-        from moviepy.audio.fx import ConcatenateAudio
-        
+        # Combiner les audios
         silence = AudioClip(duration=0.5, fps=44100)
-        combined = concatenate_audioclips([male_clip, silence, female_clip])
+        combined = concatenate_audioclips([a_m, silence, a_f])
         
         bg = bg.with_audio(combined)
         
@@ -78,7 +73,16 @@ def make_video(male_audio, female_audio):
         return out
     except Exception as e:
         print(f"Video error: {e}")
-        return None
+        # Fallback : juste l'audio masculin
+        try:
+            bg = ImageClip(bg_path, duration=a_m.duration+2)
+            bg = bg.with_audio(a_m)
+            out = "/tmp/mirror_video.mp4"
+            bg.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
+            bg.close()
+            return out
+        except:
+            return None
 
 def main():
     msg("🪞 The Mirror - Starting...")
