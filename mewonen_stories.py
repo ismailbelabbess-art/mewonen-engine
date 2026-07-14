@@ -117,8 +117,7 @@ def make_story_video(bg_path, hook, reveal, cta):
         else:
             bg = ColorClip(size=(1080, 1920), color=(5,5,15), duration=4)
         
-        # Créer le texte géant
-        def make_text_clip(text, duration, font_size=120):
+        def make_text_img(text, font_size=120):
             img = Image.new("RGBA", (1080, 400), (0, 0, 0, 0))
             draw = ImageDraw.Draw(img)
             try:
@@ -128,15 +127,21 @@ def make_story_video(bg_path, hook, reveal, cta):
             bbox = draw.textbbox((0, 0), text, font=font)
             tw = bbox[2] - bbox[0]
             draw.text((540 - tw//2, 50), text, fill=(255, 255, 255), font=font)
-            img.save("/tmp/text.png")
-            return ImageClip("/tmp/text.png", duration=duration).set_position("center")
+            path = f"/tmp/text_{random.randint(1,9999)}.png"
+            img.save(path)
+            return path
         
-        t1 = make_text_clip(hook, 1.5, 140)
-        t2 = make_text_clip(reveal, 1.5, 130)
-        t3 = make_text_clip(cta, 0.7, 100)
-        t4 = make_text_clip("mewonen.com 💜", 0.3, 80)
+        t1_path = make_text_img(hook, 140)
+        t2_path = make_text_img(reveal, 130)
+        t3_path = make_text_img(cta, 100)
+        t4_path = make_text_img("mewonen.com 💜", 80)
         
-        final = CompositeVideoClip([bg, t1.with_start(0), t2.with_start(1.5), t3.with_start(3), t4.with_start(3.7)])
+        t1 = ImageClip(t1_path, duration=1.5).with_position("center")
+        t2 = ImageClip(t2_path, duration=1.5).with_position("center").with_start(1.5)
+        t3 = ImageClip(t3_path, duration=0.7).with_position("center").with_start(3)
+        t4 = ImageClip(t4_path, duration=0.3).with_position("center").with_start(3.7)
+        
+        final = CompositeVideoClip([bg, t1, t2, t3, t4])
         
         out = "/tmp/story.mp4"
         final.write_videofile(out, codec='libx264', fps=24, preset='ultrafast', threads=2, logger=None)
