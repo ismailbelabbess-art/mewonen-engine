@@ -6,11 +6,9 @@ TELEGRAM_BOT_TOKEN = os.environ.get("MEWONEN_TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("MEWONEN_TELEGRAM_CHAT_ID", "")
 
 FALLBACKS = [
-    {"male": "I don't approach women anymore. I'm afraid of being called a creep.", "female": "I don't make the first move anymore. Every time I did, he stopped trying."},
-    {"male": "I pretend I'm fine being single. Truth is, I'm terrified I'll die alone.", "female": "I pretend I'm fine. Truth is, I'm tired of giving everything and getting nothing back."},
-    {"male": "I was taught not to cry. So I smile. And I'm breaking inside.", "female": "I was taught to be nice. So I say nothing. And I'm screaming inside."},
-    {"male": "I work 60 hours a week. Not for me. For them.", "female": "I do everything for everyone. And nobody asks if I'm okay."},
-    {"male": "I still think about her. 3 years later. I never told anyone.", "female": "I still think about him. 3 years later. I pretend I've moved on."}
+    {"male": "I don't approach women anymore. I'm afraid of being called a creep.", "female": "I don't make the first move anymore. He stopped trying."},
+    {"male": "I pretend I'm fine. Truth is, I'm terrified I'll die alone.", "female": "I pretend I'm fine. I'm tired of giving everything."},
+    {"male": "I was taught not to cry. So I smile. And I'm breaking.", "female": "I was taught to be nice. So I say nothing."},
 ]
 
 def msg(text):
@@ -24,18 +22,16 @@ def send_vid(path, caption):
         return True
     except: return False
 
-def get_video(query):
+def get_image(query):
     try:
-        r = requests.get(f"https://api.pexels.com/videos/search?query={query}&per_page=5&orientation=portrait", headers={"Authorization": PEXELS_KEY}, timeout=10)
-        hits = r.json().get("videos", [])
-        if not hits: return None
-        v = random.choice(hits).get("video_files", [])
-        for s in v:
-            if s.get("width", 0) <= 1080:
-                r2 = requests.get(s["link"], timeout=30)
-                p = f"/tmp/{random.randint(1,9999)}.mp4"
-                with open(p, "wb") as f: f.write(r2.content)
-                return p
+        r = requests.get(f"https://api.pexels.com/v1/search?query={query}&per_page=3&orientation=portrait", headers={"Authorization": PEXELS_KEY}, timeout=10)
+        photos = r.json().get("photos", [])
+        if not photos: return None
+        url = random.choice(photos)["src"]["medium"]
+        r2 = requests.get(url, timeout=20)
+        p = "/tmp/face.jpg"
+        with open(p, "wb") as f: f.write(r2.content)
+        return p
     except: pass
     return None
 
@@ -43,53 +39,49 @@ def make_video(male_text, female_text):
     try:
         from PIL import Image, ImageDraw, ImageFont
         
-        # Vidéos de visages
-        male_vid = get_video("man face expression") or get_video("man looking camera")
-        female_vid = get_video("woman face expression") or get_video("woman looking camera")
+        male_img = get_image("man face portrait")
+        female_img = get_image("woman face portrait")
         
-        dur = 10
+        # Créer le fond divisé
+        out_img = Image.new("RGB", (1080, 1920), "#000000")
+        draw = ImageDraw.Draw(out_img)
         
-        if male_vid:
-            mv = VideoFileClip(male_vid).resized(height=1920)
-            if mv.w > 540: mv = mv.cropped(x_center=mv.w/2, width=540)
-            if mv.duration < dur: mv = mv.loop(duration=dur) if hasattr(mv,'loop') else concatenate_videoclips([mv]*int(dur/mv.duration+1)).with_duration(dur)
-            else: mv = mv.with_duration(dur)
+        if male_img:
+            m = Image.open(male_img).resize((540, 1920))
+            out_img.paste(m, (0, 0))
         else:
-            mv = ColorClip(size=(540, 1920), color=(13,59,102), duration=dur)
+            for y in range(1920): draw.line([(0,y),(540,y)], fill=(13,59,102))
         
-        if female_vid:
-            fv = VideoFileClip(female_vid).resized(height=1920)
-            if fv.w > 540: fv = fv.cropped(x_center=fv.w/2, width=540)
-            if fv.duration < dur: fv = fv.loop(duration=dur) if hasattr(fv,'loop') else concatenate_videoclips([fv]*int(dur/fv.duration+1)).with_duration(dur)
-            else: fv = fv.with_duration(dur)
+        if female_img:
+            f = Image.open(female_img).resize((540, 1920))
+            out_img.paste(f, (540, 0))
         else:
-            fv = ColorClip(size=(540, 1920), color=(102,29,59), duration=dur)
+            for y in range(1920): draw.line([(540,y),(1080,y)], fill=(102,29,59))
         
-        mv = mv.with_position((0, 0))
-        fv = fv.with_position((540, 0))
+        # Ligne centrale
+        draw.line([(540,0),(540,1920)], fill=(255,255,255,80), width=3)
         
-        # Texte
-        def txt_clip(text, pos, start, duration):
-            img = Image.new("RGBA", (1080, 100), (0,0,0,0))
-            draw = ImageDraw.Draw(img)
-            try:
-                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
-            except:
-                font = ImageFont.load_default()
-            draw.text((20, 10), text, fill=(255,255,255), font=font)
-            p = f"/tmp/txt_{random.randint(1,9999)}.png"
-            img.save(p)
-            return ImageClip(p, duration=duration).with_position(('center', pos), relative=True).with_start(start)
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
+        except:
+            font = ImageFont.load_default()
         
-        t1 = txt_clip(male_text[:80], (0.88, 0), 0, 5)
-        t2 = txt_clip(female_text[:80], (0.88, 0), 5, 5)
-        t3 = txt_clip("Two sides. Same pain.", (0.94, 0), 0, 10)
-        t4 = txt_clip("@the.mirror.two", (0.97, 0), 9, 1)
+        # Texte homme (bas à gauche)
+        draw.text((20, 1700), male_text[:70], fill=(255,255,255), font=font)
+        # Texte femme (bas à droite)
+        draw.text((560, 1700), female_text[:70], fill=(255,255,255), font=font)
+        # Final
+        draw.text((250, 1820), "Two sides. Same pain.", fill=(255,255,255,200), font=font)
+        # Watermark
+        draw.text((30, 30), "© The Mirror", fill=(255,255,255,60), font=font)
         
-        final = CompositeVideoClip([mv, fv, t1, t2, t3, t4], size=(1080, 1920))
+        img_path = "/tmp/mirror_bg.png"
+        out_img.save(img_path)
+        
+        bg = ImageClip(img_path, duration=10)
         out = "/tmp/mirror.mp4"
-        final.write_videofile(out, codec='libx264', fps=24, preset='ultrafast', threads=2, logger=None)
-        final.close(); mv.close(); fv.close()
+        bg.write_videofile(out, codec='libx264', fps=24, preset='ultrafast', threads=2, logger=None)
+        bg.close()
         return out
     except Exception as e:
         print(f"Video error: {e}")
@@ -100,7 +92,7 @@ def main():
     f = random.choice(FALLBACKS)
     video = make_video(f["male"], f["female"])
     if not video: msg("Video failed"); return
-    cap = f"🪞 Two sides. Same pain.\n\n@the.mirror.two\n\n#TheMirror #Relationships #MenAndWomen #FYP"
+    cap = f"🪞 Two sides. Same pain.\n\n@the.mirror.two\n\n#TheMirror #Relationships #FYP"
     send_vid(video, cap)
     msg("✅ Posted!")
 
