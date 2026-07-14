@@ -73,9 +73,15 @@ def make_video(audio_path, bg_path):
         dur = a.duration + 2
         if bg_path:
             v = VideoFileClip(bg_path)
-            v = v.loop(duration=dur) if v.duration < dur else v.with_duration(dur)
+            if v.duration < dur:
+                repeats = int(dur / v.duration) + 1
+                clips = [v] * repeats
+                v = concatenate_videoclips(clips).with_duration(dur)
+            else:
+                v = v.with_duration(dur)
             v = v.resized(height=1920)
             if v.w > 1080: v = v.cropped(x_center=v.w/2, width=1080)
+            if v.w < 1080: v = v.resized(width=1080)
         else:
             v = ColorClip(size=(1080, 1920), color=(5,5,15), duration=dur)
         v = v.with_audio(a)
