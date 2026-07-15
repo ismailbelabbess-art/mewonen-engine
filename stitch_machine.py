@@ -15,9 +15,7 @@ REPLIES = [
 ]
 
 VIRAL_VIDEOS = [
-    "https://www.tiktok.com/@rewerggg/video/7550423289932320008",
-    "https://www.tiktok.com/@feelingsunfiltered/video/7499812345678901234",
-    "https://www.tiktok.com/@realemotions/video/7512345678901234567"
+    "https://www.tiktok.com/@rewerggg/video/7550423289932320008"
 ]
 
 def msg(text):
@@ -57,14 +55,12 @@ def make_stitch(original_path, reply_audio):
     try:
         from PIL import Image, ImageDraw, ImageFont
         
-        # Vidéo originale (5 dernières secondes)
         orig = VideoFileClip(original_path)
         start = max(0, orig.duration - 5)
-        orig = orig.subclip(start, orig.duration)
+        orig = orig.with_subclip(start, orig.duration)
         orig = orig.resized(height=1920)
         if orig.w > 540: orig = orig.cropped(x_center=orig.w/2, width=540)
         
-        # Fond bleu/rose pour la réponse
         reply_img = Image.new("RGB", (540, 1920), "#000000")
         draw = ImageDraw.Draw(reply_img)
         for y in range(1920):
@@ -74,12 +70,10 @@ def make_stitch(original_path, reply_audio):
         reply_path = "/tmp/reply_bg.png"
         reply_img.save(reply_path)
         
-        # Audio de la réponse
         a = AudioFileClip(reply_audio)
         dur = a.duration + 1
         reply_clip = ImageClip(reply_path, duration=dur).with_audio(a)
         
-        # Assembler
         orig = orig.with_position((0, 0))
         reply_clip = reply_clip.with_position((540, 0))
         
@@ -95,7 +89,6 @@ def make_stitch(original_path, reply_audio):
 def main():
     msg("🎬 Stitch Machine - Starting...")
     
-    # Choisir une vidéo virale
     url = random.choice(VIRAL_VIDEOS)
     original_path = "/tmp/original.mp4"
     
@@ -103,14 +96,12 @@ def main():
         msg("Download failed")
         return
     
-    # Générer la réponse
     reply = random.choice(REPLIES)
     audio = voice(reply)
     if not audio:
         msg("Voice failed")
         return
     
-    # Créer le Stitch
     stitch = make_stitch(original_path, audio)
     if not stitch:
         msg("Stitch failed")
