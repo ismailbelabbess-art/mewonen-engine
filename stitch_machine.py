@@ -1,5 +1,4 @@
 import os, subprocess, random, requests
-from moviepy import *
 
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
 VOICE_ID = os.environ.get("MEWONEN_VOICE_ID", "")
@@ -51,40 +50,52 @@ def download_video(url, output):
     except: pass
     return False
 
-def make_stitch(original_path, reply_audio):
+def make_stitch_ffmpeg(original_path, audio_path, output_path):
+    """Utilise FFmpeg pour créer le Stitch"""
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        # Créer une image de fond rose pour la partie réponse
+        subprocess.run([
+            "ffmpeg", "-y", "-f", "lavfi",
+            "-i", "color=c=#661d3b:s=540x1920:d=6",
+            "-frames:v", "1", "/tmp/reply_bg.png"
+        ], check=True, capture_output=True)
         
-        orig = VideoFileClip(original_path)
-        start = max(0, orig.duration - 5)
-        orig = orig.with_subclip(start, orig.duration)
-        orig = orig.resized(height=1920)
-        if orig.w > 540: orig = orig.cropped(x_center=orig.w/2, width=540)
+        # Créer la vidéo réponse (image + audio)
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-loop", "1", "-i", "/tmp/reply_bg.png",
+            "-i", audio_path,
+            "-c:v", "libx264", "-tune", "stillimage",
+            "-c:a", "aac", "-b:a", "128k",
+            "-pix_fmt", "yuv420p", "-t", "6",
+            "-vf", "drawtext=text='Mewonen':fontcolor=white@0.5:fontsize=40:x=(w-text_w)/2:y=800,drawtext=text='mewonen.com':fontcolor=white@0.3:fontsize=30:x=(w-text_w)/2:y=1600",
+            "/tmp/reply.mp4"
+        ], check=True, capture_output=True)
         
-        reply_img = Image.new("RGB", (540, 1920), "#000000")
-        draw = ImageDraw.Draw(reply_img)
-        for y in range(1920):
-            draw.line([(0,y),(540,y)], fill=(int(50+(y/1920)*80), int(10+(y/1920)*25), int(30+(y/1920)*55)))
-        draw.text((80, 800), "Mewonen", fill=(255,255,255,150), font=ImageFont.load_default())
-        draw.text((40, 1600), "mewonen.com", fill=(255,255,255,100), font=ImageFont.load_default())
-        reply_path = "/tmp/reply_bg.png"
-        reply_img.save(reply_path)
+        # Prendre les 5 dernières secondes de l'original
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-sseof", "-5", "-i", original_path,
+            "-c:v", "libx264", "-c:a", "aac",
+            "-vf", "scale=540:1920,crop=540:1920",
+            "-t", "5", "/tmp/original_cut.mp4"
+        ], check=True, capture_output=True)
         
-        a = AudioFileClip(reply_audio)
-        dur = a.duration + 1
-        reply_clip = ImageClip(reply_path, duration=dur).with_audio(a)
+        # Assembler gauche (original) + droite (réponse)
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-i", "/tmp/original_cut.mp4",
+            "-i", "/tmp/reply.mp4",
+            "-filter_complex", "[0:v]scale=540:1920[left];[1:v]scale=540:1920[right];[left][right]hstack=inputs=2",
+            "-c:v", "libx264", "-preset", "ultrafast",
+            "-c:a", "aac",
+            output_path
+        ], check=True, capture_output=True)
         
-        orig = orig.with_position((0, 0))
-        reply_clip = reply_clip.with_position((540, 0))
-        
-        final = CompositeVideoClip([orig, reply_clip], size=(1080, 1920))
-        out = "/tmp/stitch.mp4"
-        final.write_videofile(out, codec='libx264', audio_codec='aac', fps=24, preset='ultrafast', threads=2, logger=None)
-        final.close(); orig.close(); reply_clip.close()
-        return out
+        return os.path.exists(output_path)
     except Exception as e:
-        print(f"Stitch error: {e}")
-        return None
+        print(f"FFmpeg error: {e}")
+        return False
 
 def main():
     msg("🎬 Stitch Machine - Starting...")
@@ -102,13 +113,13 @@ def main():
         msg("Voice failed")
         return
     
-    stitch = make_stitch(original_path, audio)
-    if not stitch:
+    output = "/tmp/stitch.mp4"
+    if not make_stitch_ffmpeg(original_path, audio, output):
         msg("Stitch failed")
         return
     
     cap = f"🪞 {reply}\n\n💜 mewonen.com\n\n#Mewonen #Stitch #Emotions #FYP"
-    send_vid(stitch, cap)
+    send_vid(output, cap)
     msg("✅ Stitch posted!")
 
 if __name__ == "__main__":
