@@ -1,7 +1,7 @@
 import os, random, requests
 from moviepy import *
 
-PEXELS_KEY = os.environ.get("PEXELS_KEY", "")
+PIXABAY_KEY = os.environ.get("PIXABAY_KEY", "")
 MEWONEN_TOKEN = os.environ.get("MEWONEN_TELEGRAM_BOT_TOKEN", "")
 MEWONEN_CHAT = os.environ.get("MEWONEN_TELEGRAM_CHAT_ID", "")
 CALM_TOKEN = os.environ.get("CALM_TELEGRAM_BOT_TOKEN", "")
@@ -12,14 +12,12 @@ SAMURAI_CHAT = os.environ.get("SAMURAI_TELEGRAM_CHAT_ID", "")
 QUERIES = [
     "sad man alone",
     "sad woman alone",
-    "lonely man window",
-    "lonely woman night",
+    "lonely",
     "old couple in love",
-    "elderly couple holding hands",
-    "happy old couple together",
-    "man crying alone",
-    "woman looking sad window",
-    "couple in love sunset"
+    "elderly couple",
+    "couple in love sunset",
+    "lonely woman",
+    "lonely man"
 ]
 
 def msg(token, chat, text):
@@ -36,10 +34,10 @@ def send_vid(token, chat, path, caption):
 def get_image():
     q = random.choice(QUERIES)
     try:
-        r = requests.get(f"https://api.pexels.com/v1/search?query={q}&per_page=5&orientation=portrait", headers={"Authorization": PEXELS_KEY}, timeout=10)
-        photos = r.json().get("photos", [])
-        if photos:
-            img_url = random.choice(photos)["src"]["large"]
+        r = requests.get(f"https://pixabay.com/api/?key={PIXABAY_KEY}&q={q}&per_page=5&orientation=vertical&safesearch=true", timeout=10)
+        hits = r.json().get("hits", [])
+        if hits:
+            img_url = random.choice(hits)["largeImageURL"]
             r2 = requests.get(img_url, timeout=20)
             p = "/tmp/bg.jpg"
             with open(p, "wb") as f: f.write(r2.content)
@@ -90,6 +88,3 @@ def main():
     if CALM_TOKEN and CALM_CHAT: send_vid(CALM_TOKEN, CALM_CHAT, video, cap)
     if SAMURAI_TOKEN and SAMURAI_CHAT: send_vid(SAMURAI_TOKEN, SAMURAI_CHAT, video, cap)
     msg(MEWONEN_TOKEN, MEWONEN_CHAT, "✅ Posted!")
-
-if __name__ == "__main__":
-    main()
