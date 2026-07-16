@@ -33,19 +33,17 @@ def send_vid(token, chat, path, caption):
         return True
     except: return False
 
-def get_video():
+def get_image():
     q = random.choice(QUERIES)
     try:
-        r = requests.get(f"https://api.pexels.com/videos/search?query={q}&per_page=5&orientation=portrait", headers={"Authorization": PEXELS_KEY}, timeout=10)
-        hits = r.json().get("videos", [])
-        if hits:
-            v = random.choice(hits).get("video_files", [])
-            for s in v:
-                if s.get("width", 0) <= 1080:
-                    r2 = requests.get(s["link"], timeout=30)
-                    p = "/tmp/bg.mp4"
-                    with open(p, "wb") as f: f.write(r2.content)
-                    return p
+        r = requests.get(f"https://api.pexels.com/v1/search?query={q}&per_page=5&orientation=portrait", headers={"Authorization": PEXELS_KEY}, timeout=10)
+        photos = r.json().get("photos", [])
+        if photos:
+            img_url = random.choice(photos)["src"]["large"]
+            r2 = requests.get(img_url, timeout=20)
+            p = "/tmp/bg.jpg"
+            with open(p, "wb") as f: f.write(r2.content)
+            return p
     except: pass
     return None
 
@@ -55,20 +53,11 @@ def make_video(bg_path):
         
         dur = 8
         if bg_path:
-            v = VideoFileClip(bg_path)
-            if v.duration < dur:
-                repeats = int(dur / v.duration) + 1
-                clips = [v] * repeats
-                v = concatenate_videoclips(clips).with_duration(dur)
-            else:
-                v = v.with_duration(dur)
-            v = v.resized(height=1920)
+            v = ImageClip(bg_path, duration=dur).resized(height=1920)
             if v.w > 1080: v = v.cropped(x_center=v.w/2, width=1080)
-            if v.w < 1080: v = v.resized(width=1080)
         else:
             v = ColorClip(size=(1080, 1920), color=(5,5,15), duration=dur)
         
-        # Juste "mewonen.com 💜" en bas
         txt_img = Image.new("RGBA", (1080, 100), (0,0,0,0))
         draw = ImageDraw.Draw(txt_img)
         try:
@@ -92,8 +81,8 @@ def make_video(bg_path):
 
 def main():
     msg(MEWONEN_TOKEN, MEWONEN_CHAT, "🎬 Loneliness Silent - Starting...")
-    bg = get_video()
-    if not bg: msg(MEWONEN_TOKEN, MEWONEN_CHAT, "No video found"); return
+    bg = get_image()
+    if not bg: msg(MEWONEN_TOKEN, MEWONEN_CHAT, "No image found"); return
     video = make_video(bg)
     if not video: msg(MEWONEN_TOKEN, MEWONEN_CHAT, "Video failed"); return
     cap = f"💜 mewonen.com\n\n#Loneliness #MentalHealth #Emotions #FYP"
