@@ -1,0 +1,26 @@
+name: Viral Emotion
+
+on:
+  schedule:
+    - cron: '0 22 * * *'  # 18h New York (22h UTC)
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install moviepy requests pillow numpy
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - env:
+          PEXELS_KEY: ${{ secrets.PEXELS_KEY }}
+          MEWONEN_TELEGRAM_BOT_TOKEN: ${{ secrets.MEWONEN_TELEGRAM_BOT_TOKEN }}
+          MEWONEN_TELEGRAM_CHAT_ID: ${{ secrets.MEWONEN_TELEGRAM_CHAT_ID }}
+          CALM_TELEGRAM_BOT_TOKEN: ${{ secrets.CALM_TELEGRAM_BOT_TOKEN }}
+          CALM_TELEGRAM_CHAT_ID: ${{ secrets.CALM_TELEGRAM_CHAT_ID }}
+          SAMURAI_TELEGRAM_BOT_TOKEN: ${{ secrets.SAMURAI_TELEGRAM_BOT_TOKEN }}
+          SAMURAI_TELEGRAM_CHAT_ID: ${{ secrets.SAMURAI_TELEGRAM_CHAT_ID }}
+        run: python viral_emotion.py
